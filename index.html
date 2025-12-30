@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>晴れる屋ポイント履歴集計ツール（簡単取込版）</title>
+    <title>晴れる屋ポイント履歴集計ツール</title>
     <style>
         body { font-family: "Helvetica Neue", Arial, sans-serif; background-color: #f4f4f9; color: #333; margin: 0; padding: 20px; }
         .container { max-width: 1000px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
@@ -12,8 +12,6 @@
         /* Input Section */
         .input-section { margin-bottom: 20px; padding: 15px; background: #fafafa; border: 1px dashed #ccc; border-radius: 5px; }
         .input-section p { margin-top: 0; font-weight: bold; color: #555; }
-        .input-instruction { font-size: 14px; color: #666; margin-bottom: 5px; }
-        .bookmarklet-info { background: #eef; padding: 10px; border-radius: 4px; font-size: 13px; margin-bottom: 10px; border: 1px solid #ccd; }
         textarea { width: 100%; height: 100px; margin-top: 5px; padding: 10px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; }
         
         .btn-group { margin-top: 10px; display: flex; gap: 10px; }
@@ -65,13 +63,10 @@
 
     <div class="input-section">
         <p>データの取り込み</p>
-        <div class="bookmarklet-info">
-            <strong>スマホで簡単入力：</strong><br>
-            専用の「ブックマークレット」を使うと、晴れる屋マイページからデータを一発でコピーできます。<br>
-            <span style="color: #d9534f; font-weight: bold;">※ブラウザの機能で「PC版サイト」を表示してから実行してください。</span><br>
-            コピーされたデータを下のボックスに貼り付けてください。
+        <div style="font-size: 13px; color: #666; margin-bottom: 10px;">
+            晴れる屋のマイページ（ポイント履歴）の文字をコピーして、下のボックスに貼り付けてください。<br>
         </div>
-        <textarea id="rawInput" placeholder='ここにデータを貼り付け（JSON形式 または テキスト）...'></textarea>
+        <textarea id="rawInput" placeholder='ここにコピーしたテキストデータを貼り付け...'></textarea>
         <div class="btn-group">
             <button onclick="processData(true)">集計する</button>
             <button class="secondary" onclick="clearData()">クリア</button>
@@ -146,18 +141,8 @@
 
         localStorage.setItem(STORAGE_KEY, rawText);
 
-        // JSONかテキストかを自動判別
-        try {
-            const jsonData = JSON.parse(rawText);
-            if (Array.isArray(jsonData)) {
-                allData = parseJsonData(jsonData);
-            } else {
-                throw new Error("Not an array");
-            }
-        } catch (e) {
-            // JSONでなければ従来のテキスト解析へ
-            allData = parseRawText(rawText);
-        }
+        // ブックマークレット（JSON）機能を削除し、テキスト解析のみ実行
+        allData = parseRawText(rawText);
 
         setupYearFilter(allData);
         applyFilters();
@@ -174,49 +159,7 @@
         }
     }
 
-    // JSONデータ（ブックマークレット経由）を解析する関数
-    function parseJsonData(jsonArray) {
-        const records = [];
-        const dateRegex = /^(\d{4})年(\d{1,2})月(\d{1,2})日$/;
-
-        jsonArray.forEach(item => {
-            const rec = {};
-            rec.date = item.date || '';
-            
-            // 年の抽出
-            const dateMatch = rec.date.match(dateRegex);
-            rec.year = dateMatch ? parseInt(dateMatch[1]) : new Date().getFullYear();
-
-            // ポイント数値化
-            rec.points = parseInt((item.point || '0').replace(/[+,]/g, ''), 10);
-            if (isNaN(rec.points)) return; // 無効なデータはスキップ
-
-            rec.orderId = item.orderId || '';
-            rec.remarks = item.remarks || '';
-
-            // 分類ロジック（共通）
-            if (rec.points < 0) {
-                rec.type = 'USE';
-                rec.typeName = '利用';
-            } else if (rec.remarks.includes('Point Granter')) {
-                rec.type = 'EVENT';
-                rec.typeName = '大会参加';
-            } else if (rec.remarks.includes('店舗付与')) {
-                rec.type = 'STORE';
-                rec.typeName = '店舗購入';
-            } else if (rec.orderId) {
-                rec.type = 'TC';
-                rec.typeName = '通販/TC注文';
-            } else {
-                rec.type = 'OTHER';
-                rec.typeName = 'その他';
-            }
-            records.push(rec);
-        });
-        return records;
-    }
-
-    // 既存のテキスト解析ロジック
+    // テキスト解析ロジック
     function parseRawText(text) {
         const lines = text.split('\n').map(l => l.trim()).filter(l => l !== '');
         const records = [];
