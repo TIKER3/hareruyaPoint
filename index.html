@@ -185,7 +185,6 @@
                     <th>月</th>
                     <th class="num">獲得 (+)</th>
                     <th class="num">利用 (-)</th>
-                    <th class="num">収支</th>
                 </tr>
             </thead>
             <tbody id="monthlyTableBody">
@@ -339,18 +338,13 @@
 
         for(let i=1; i<=12; i++) {
             const m = monthlyData[i];
-            const net = m.gained - m.used;
             
             const tr = document.createElement('tr');
             
-            const netClass = net > 0 ? 'plus' : (net < 0 ? 'minus' : '');
-            const netSign = net > 0 ? '+' : '';
-
             tr.innerHTML = `
                 <td><strong>${i}月</strong></td>
                 <td class="num plus">${m.gained > 0 ? '+' + m.gained.toLocaleString() : '-'}</td>
                 <td class="num minus">${m.used > 0 ? '-' + m.used.toLocaleString() : '-'}</td>
-                <td class="num ${netClass}"><strong>${net !== 0 ? netSign + net.toLocaleString() : '-'}</strong></td>
             `;
             tbody.appendChild(tr);
         }
